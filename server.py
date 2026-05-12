@@ -41,7 +41,7 @@ app.add_middleware(
 
 _BASE = Path(__file__).parent
 _HTTP_PROXY = os.environ.get("HTTP_PROXY") or os.environ.get("HTTPS_PROXY")
-_PROXY_CONFIG = GenericProxyConfig(http=_HTTP_PROXY, https=_HTTP_PROXY) if _HTTP_PROXY else None
+_PROXY_CONFIG = GenericProxyConfig(http_url=_HTTP_PROXY, https_url=_HTTP_PROXY) if _HTTP_PROXY else None
 _HTML = (_BASE / "index.html").read_text(encoding="utf-8")
 
 try:
