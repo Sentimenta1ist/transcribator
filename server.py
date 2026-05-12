@@ -1,8 +1,12 @@
 import asyncio
 import json
+import logging
 import os
+import traceback
 import urllib.request
 from pathlib import Path
+
+logging.basicConfig(level=logging.INFO)
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -74,6 +78,7 @@ async def transcript_endpoint(req: TranscriptRequest):
     except NoTranscriptFound:
         raise HTTPException(status_code=422, detail="No transcript found for this video.")
     except Exception as e:
+        logging.error("transcript fetch failed: %s\n%s", e, traceback.format_exc())
         raise HTTPException(status_code=502, detail=str(e))
 
     transcript = format_transcript(snippets)
