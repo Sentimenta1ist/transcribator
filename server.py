@@ -13,6 +13,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
+import requests as _requests
 from youtube_transcript_api._errors import NoTranscriptFound, RequestBlocked, TranscriptsDisabled
 from youtube_transcript_api.proxies import GenericProxyConfig
 
@@ -42,6 +43,12 @@ app.add_middleware(
 _BASE = Path(__file__).parent
 _HTTP_PROXY = os.environ.get("HTTP_PROXY") or os.environ.get("HTTPS_PROXY")
 _PROXY_CONFIG = GenericProxyConfig(http_url=_HTTP_PROXY, https_url=_HTTP_PROXY) if _HTTP_PROXY else None
+
+_SESSION = _requests.Session()
+_SESSION.headers.update({
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+})
 _HTML = (_BASE / "index.html").read_text(encoding="utf-8")
 
 try:
@@ -74,7 +81,7 @@ async def transcript_endpoint(req: TranscriptRequest):
     try:
         title, snippets = await asyncio.gather(
             asyncio.to_thread(get_video_title, req.url),
-            asyncio.to_thread(fetch_transcript, video_id, proxy_config=_PROXY_CONFIG),
+            asyncio.to_thread(fetch_transcript, video_id, proxy_config=_PROXY_CONFIG, http_client=_SESSION),
         )
     except TranscriptsDisabled:
         raise HTTPException(status_code=422, detail="Transcripts are disabled for this video.")
