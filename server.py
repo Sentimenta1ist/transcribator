@@ -49,6 +49,8 @@ _SESSION.headers.update({
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
 })
+if _HTTP_PROXY:
+    _SESSION.proxies.update({"http": _HTTP_PROXY, "https": _HTTP_PROXY})
 _HTML = (_BASE / "index.html").read_text(encoding="utf-8")
 
 try:
@@ -81,7 +83,7 @@ async def transcript_endpoint(req: TranscriptRequest):
     try:
         title, snippets = await asyncio.gather(
             asyncio.to_thread(get_video_title, req.url),
-            asyncio.to_thread(fetch_transcript, video_id, proxy_config=_PROXY_CONFIG, http_client=_SESSION),
+            asyncio.to_thread(fetch_transcript, video_id, http_client=_SESSION),
         )
     except TranscriptsDisabled:
         raise HTTPException(status_code=422, detail="Transcripts are disabled for this video.")
