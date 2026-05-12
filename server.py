@@ -1,5 +1,7 @@
 import asyncio
+import json
 import os
+import urllib.request
 from pathlib import Path
 
 import uvicorn
@@ -13,10 +15,15 @@ from yt_transcript import (
     extract_video_id,
     fetch_transcript,
     format_transcript,
-    get_video_title,
     sanitize_filename,
     unique_path,
 )
+
+
+def get_video_title(url: str) -> str:
+    oembed = f"https://www.youtube.com/oembed?url={url}&format=json"
+    with urllib.request.urlopen(oembed, timeout=10) as resp:
+        return json.loads(resp.read()).get("title", "transcript")
 
 app = FastAPI(title="Transcribator")
 
