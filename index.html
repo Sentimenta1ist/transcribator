@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transcribator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:ital,wght@0,400;0,500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg:              #0a0a0b;
+      --surface:         #111113;
+      --surface-2:       #18181b;
+      --surface-3:       #1e1e22;
+      --border:          #1e1e24;
+      --border-hover:    #2c2c34;
+      --text:            #ededf0;
+      --text-muted:      #80808c;
+      --text-dim:        #38383f;
+      --accent:          #f97316;
+      --accent-hover:    #fb923c;
+      --accent-dim:      rgba(249, 115, 22, 0.10);
+      --accent-glow:     rgba(249, 115, 22, 0.20);
+      --accent-border:   rgba(249, 115, 22, 0.30);
+      --error:           #f87171;
+      --error-dim:       rgba(248, 113, 113, 0.09);
+      --error-border:    rgba(248, 113, 113, 0.22);
+      --success:         #4ade80;
+      --radius:          10px;
+      --radius-sm:       6px;
+      --radius-lg:       14px;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(249,115,22,0.06) 0%, transparent 60%);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 56px 20px 96px;
+    }
+
+    /* ── HEADER ─────────────────────────────────────── */
+    header {
+      width: 100%;
+      max-width: 700px;
+      margin-bottom: 52px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+    }
+
+    .wordmark {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .wordmark-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      opacity: 0.6;
+    }
+
+    h1 {
+      font-size: clamp(26px, 4.5vw, 40px);
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      line-height: 1.1;
+      color: var(--text);
+    }
+
+    .tagline {
+      font-size: 15px;
+      color: var(--text-muted);
+      font-weight: 300;
+      max-width: 400px;
+      line-height: 1.5;
+    }
+
+    /* ── MAIN CONTAINER ─────────────────────────────── */
+    main {
+      width: 100%;
+      max-width: 700px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ── INPUT GROUP ────────────────────────────────── */
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .url-input {
+      flex: 1;
+      min-width: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      padding: 14px 18px;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+
+    .url-input::placeholder {
+      color: var(--text-dim);
+    }
+
+    .url-input:hover:not(:disabled) {
+      border-color: var(--border-hover);
+      background: var(--surface-2);
+    }
+
+    .url-input:focus {
+      border-color: var(--accent);
+      background: var(--surface-2);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .url-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ── BUTTONS ────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      letter-spacing: 0.01em;
+      padding: 14px 22px;
+      transition: background 0.14s, box-shadow 0.14s, border-color 0.14s,
+                  color 0.14s, transform 0.10s, opacity 0.14s;
+      white-space: nowrap;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    /* Primary — accent fill */
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+      box-shadow: 0 4px 22px rgba(249, 115, 22, 0.35);
+    }
+
+    /* Ghost — subtle */
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 7px 13px;
+    }
+
+    .btn-ghost:hover:not(:disabled) {
+      background: var(--surface-2);
+      border-color: var(--border-hover);
+      color: var(--text);
+    }
+
+    /* Claude — tinted */
+    .btn-claude {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent-border);
+      color: var(--accent);
+      font-size: 15px;
+      font-weight: 500;
+      padding: 15px 28px;
+      width: 100%;
+      border-radius: var(--radius-lg);
+    }
+
+    .btn-claude:hover:not(:disabled) {
+      background: var(--accent-glow);
+      border-color: rgba(249, 115, 22, 0.5);
+      box-shadow: 0 4px 28px rgba(249, 115, 22, 0.12);
+      color: var(--accent-hover);
+    }
+
+    /* ── SPINNER ────────────────────────────────────── */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      width: 15px;
+      height: 15px;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+
+    /* ── ERROR MESSAGE ──────────────────────────────── */
+    .error-msg {
+      display: none;
+      align-items: center;
+      gap: 9px;
+      background: var(--error-dim);
+      border: 1px solid var(--error-border);
+      border-radius: var(--radius-sm);
+      color: var(--error);
+      font-size: 13.5px;
+      padding: 11px 15px;
+      line-height: 1.45;
+    }
+
+    .error-msg.visible {
+      display: flex;
+    }
+
+    .error-icon {
+      font-style: normal;
+      flex-shrink: 0;
+      font-size: 14px;
+    }
+
+    /* ── SKELETON LOADER ────────────────────────────── */
+    @keyframes shimmer {
+      0%   { background-position: 200% center; }
+      100% { background-position: -200% center; }
+    }
+
+    .skeleton-wrap {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .skeleton-wrap.visible {
+      display: flex;
+    }
+
+    .skeleton-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+    }
+
+    .sk {
+      height: 13px;
+      border-radius: 4px;
+      background: linear-gradient(
+        90deg,
+        var(--surface-3) 25%,
+        var(--border-hover) 50%,
+        var(--surface-3) 75%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.6s ease infinite;
+    }
+
+    .skeleton-label {
+      height: 11px;
+      width: 120px;
+      border-radius: 3px;
+      background: var(--surface-3);
+    }
+
+    /* ── VIDEO TITLE ────────────────────────────────── */
+    .video-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: -0.01em;
+      line-height: 1.4;
+      min-height: 1em;
+    }
+
+    /* ── TRANSCRIPT ─────────────────────────────────── */
+    .transcript-wrap {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .transcript-wrap.visible {
+      display: flex;
+    }
+
+    .transcript-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .transcript-scroll {
+      overflow-y: auto;
+      max-height: 400px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-hover) transparent;
+    }
+
+    .transcript-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .transcript-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .transcript-scroll::-webkit-scrollbar-thumb {
+      background: var(--border-hover);
+      border-radius: 3px;
+    }
+
+    .transcript-lines {
+      padding: 16px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.85;
+      color: #b8b8c4;
+    }
+
+    .t-line {
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+      transition: background 0.08s;
+    }
+
+    .t-line:hover {
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .t-num {
+      flex-shrink: 0;
+      width: 52px;
+      padding: 0 14px 0 20px;
+      text-align: right;
+      color: var(--text-dim);
+      user-select: none;
+      font-size: 11px;
+      font-style: italic;
+    }
+
+    .t-content {
+      flex: 1;
+      padding-right: 20px;
+      word-break: break-word;
+    }
+
+    /* ── TRANSCRIPT FOOTER ──────────────────────────── */
+    .transcript-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 2px;
+    }
+
+    .transcript-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.02em;
+    }
+
+    /* ── TOAST ──────────────────────────────────────── */
+    @keyframes toastIn {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-14px) scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+      }
+    }
+
+    @keyframes toastOut {
+      from {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px) scale(0.96);
+      }
+    }
+
+    .toast {
+      position: fixed;
+      top: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface-2);
+      border: 1px solid var(--border-hover);
+      border-radius: 40px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 18px 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.04);
+      z-index: 9999;
+      white-space: nowrap;
+      pointer-events: none;
+      animation: toastIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .toast.leaving {
+      animation: toastOut 0.2s ease forwards;
+    }
+
+    .toast-pip {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      flex-shrink: 0;
+      box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+    }
+
+    /* ── DIVIDER ────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      border: none;
+    }
+
+    /* ── FOOTER ─────────────────────────────────────── */
+    footer {
+      margin-top: 72px;
+      font-size: 11.5px;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── RESPONSIVE ─────────────────────────────────── */
+    @media (max-width: 520px) {
+      body {
+        padding: 36px 16px 72px;
+      }
+
+      header {
+        margin-bottom: 36px;
+      }
+
+      .input-row {
+        flex-direction: column;
+      }
+
+      .btn-primary {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .transcript-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="wordmark">
+      <span class="wordmark-dot"></span>
+      Transcribator
+      <span class="wordmark-dot"></span>
+    </div>
+    <h1>Extract any video transcript</h1>
+    <p class="tagline">Paste a YouTube URL and get the full transcript, ready for analysis.</p>
+  </header>
+
+  <main>
+
+    <!-- Input row -->
+    <div class="input-row">
+      <input
+        id="urlInput"
+        class="url-input"
+        type="url"
+        placeholder="Paste a YouTube video link"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+      />
+      <button id="fetchBtn" class="btn btn-primary">
+        <span id="fetchLabel">Get Transcript</span>
+        <span id="fetchSpinner" class="spinner" style="display:none"></span>
+      </button>
+    </div>
+
+    <!-- Error message -->
+    <div id="errorMsg" class="error-msg" role="alert">
+      <i class="error-icon">✕</i>
+      <span id="errorText"></span>
+    </div>
+
+    <!-- Skeleton loader -->
+    <div id="skeletonWrap" class="skeleton-wrap">
+      <div class="skeleton-box">
+        <div class="skeleton-label"></div>
+        <div class="sk" style="width:82%"></div>
+        <div class="sk" style="width:67%"></div>
+        <div class="sk" style="width:91%"></div>
+        <div class="sk" style="width:58%"></div>
+        <div class="sk" style="width:76%"></div>
+        <div class="sk" style="width:88%"></div>
+        <div class="sk" style="width:62%"></div>
+        <div class="sk" style="width:79%"></div>
+        <div class="sk" style="width:53%"></div>
+        <div class="sk" style="width:84%"></div>
+      </div>
+    </div>
+
+    <!-- Transcript result -->
+    <div id="transcriptWrap" class="transcript-wrap">
+
+      <p id="transcriptTitle" class="video-title"></p>
+
+      <div class="transcript-box">
+        <div class="transcript-scroll" id="transcriptScroll">
+          <div class="transcript-lines" id="transcriptLines"></div>
+        </div>
+      </div>
+
+      <div class="transcript-footer">
+        <span class="transcript-meta" id="transcriptMeta"></span>
+        <button id="copyRawBtn" class="btn btn-ghost">Copy Transcript</button>
+      </div>
+
+      <hr class="divider">
+
+      <button id="openClaudeBtn" class="btn btn-claude">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12 2.5C6.753 2.5 2.5 6.753 2.5 12S6.753 21.5 12 21.5 21.5 17.247 21.5 12 17.247 2.5 12 2.5zm0 2a7.5 7.5 0 1 1 0 15 7.5 7.5 0 0 1 0-15zm0 2.5a5 5 0 1 0 0 10A5 5 0 0 0 12 7zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" fill="currentColor"/>
+        </svg>
+        Copy &amp; Open Claude
+      </button>
+
+    </div>
+
+  </main>
+
+  <footer>✦ paste · extract · analyze</footer>
+
+  <script>
+
+    // ── API CALL ─────────────────────────────────────────────────
+    async function fetchTranscript(url) {
+      const res = await fetch('/api/transcript', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Server error ${res.status}`);
+      }
+      return res.json();
+    }
+
+    // ── STATE ────────────────────────────────────────────────────
+    let currentTranscript = '';
+    let currentClipboardText = '';
+
+    // ── DOM ──────────────────────────────────────────────────────
+    const urlInput        = document.getElementById('urlInput');
+    const fetchBtn        = document.getElementById('fetchBtn');
+    const fetchLabel      = document.getElementById('fetchLabel');
+    const fetchSpinner    = document.getElementById('fetchSpinner');
+    const errorMsg        = document.getElementById('errorMsg');
+    const errorText       = document.getElementById('errorText');
+    const skeletonWrap    = document.getElementById('skeletonWrap');
+    const transcriptWrap  = document.getElementById('transcriptWrap');
+    const transcriptLines = document.getElementById('transcriptLines');
+    const transcriptMeta  = document.getElementById('transcriptMeta');
+    const openClaudeBtn   = document.getElementById('openClaudeBtn');
+    const copyRawBtn      = document.getElementById('copyRawBtn');
+
+    // ── UI STATE MACHINE ─────────────────────────────────────────
+    function applyState(state, opts = {}) {
+      // reset everything
+      urlInput.disabled = false;
+      fetchBtn.disabled = false;
+      fetchLabel.textContent = 'Get Transcript';
+      fetchSpinner.style.display = 'none';
+      errorMsg.classList.remove('visible');
+      skeletonWrap.classList.remove('visible');
+      transcriptWrap.classList.remove('visible');
+
+      if (state === 'loading') {
+        urlInput.disabled = true;
+        fetchBtn.disabled = true;
+        fetchLabel.textContent = 'Fetching…';
+        fetchSpinner.style.display = '';
+        skeletonWrap.classList.add('visible');
+      } else if (state === 'loaded') {
+        transcriptWrap.classList.add('visible');
+      } else if (state === 'error') {
+        errorText.textContent = opts.message || 'Something went wrong. Please try again.';
+        errorMsg.classList.add('visible');
+      }
+    }
+
+    // ── RENDER TRANSCRIPT ────────────────────────────────────────
+    function renderTranscript(text, title) {
+      const titleEl = document.getElementById('transcriptTitle');
+      if (titleEl) titleEl.textContent = title || '';
+      const lines = text.split('\n');
+      const frag = document.createDocumentFragment();
+
+      lines.forEach((line, i) => {
+        const row = document.createElement('div');
+        row.className = 't-line';
+
+        const num = document.createElement('span');
+        num.className = 't-num';
+        num.setAttribute('aria-hidden', 'true');
+        num.textContent = String(i + 1).padStart(3, ' '); // figure space
+
+        const content = document.createElement('span');
+        content.className = 't-content';
+        content.textContent = line;
+
+        row.appendChild(num);
+        row.appendChild(content);
+        frag.appendChild(row);
+      });
+
+      transcriptLines.innerHTML = '';
+      transcriptLines.appendChild(frag);
+
+      const words = text.trim().split(/\s+/).filter(Boolean).length;
+      transcriptMeta.textContent =
+        `${lines.length} lines · ${words.toLocaleString()} words · ${text.length.toLocaleString()} chars`;
+    }
+
+    // ── TOAST ────────────────────────────────────────────────────
+    function showToast(message) {
+      document.querySelectorAll('.toast').forEach(el => el.remove());
+
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.setAttribute('role', 'status');
+      toast.innerHTML = `<span class="toast-pip"></span>${message}`;
+      document.body.appendChild(toast);
+
+      const DURATION = 3000;
+      const FADE = 220;
+
+      setTimeout(() => {
+        toast.classList.add('leaving');
+        setTimeout(() => toast.remove(), FADE);
+      }, DURATION);
+    }
+
+    // ── VALIDATION ───────────────────────────────────────────────
+    function isYouTubeUrl(raw) {
+      try {
+        const u = new URL(raw);
+        return ['www.youtube.com', 'youtube.com', 'youtu.be', 'm.youtube.com']
+          .includes(u.hostname);
+      } catch {
+        return false;
+      }
+    }
+
+    // ── FETCH HANDLER ────────────────────────────────────────────
+    async function handleFetch() {
+      const url = urlInput.value.trim();
+
+      if (!url) {
+        applyState('error', { message: 'Please paste a YouTube URL first.' });
+        urlInput.focus();
+        return;
+      }
+
+      if (!isYouTubeUrl(url)) {
+        applyState('error', {
+          message: 'That doesn\'t look like a YouTube URL. Try: https://youtube.com/watch?v=…'
+        });
+        urlInput.focus();
+        return;
+      }
+
+      applyState('loading');
+
+      try {
+        const data = await fetchTranscript(url);
+        currentTranscript = data.transcript;
+        currentClipboardText = data.clipboard_text;
+        renderTranscript(data.transcript, data.title);
+        applyState('loaded');
+        transcriptLines.parentElement.scrollTop = 0;
+      } catch (err) {
+        applyState('error', { message: err?.message || 'Failed to fetch transcript. Please try again.' });
+      }
+    }
+
+    // ── COPY & OPEN CLAUDE ───────────────────────────────────────
+    async function handleOpenClaude() {
+      try {
+        await navigator.clipboard.writeText(currentClipboardText);
+        showToast('Copied — paste into Claude');
+      } catch {
+        showToast('Clipboard access denied — please copy manually');
+      }
+      window.open('https://claude.ai/new', '_blank', 'noopener,noreferrer');
+    }
+
+    // ── COPY TRANSCRIPT ──────────────────────────────────────────
+    async function handleCopyRaw() {
+      try {
+        await navigator.clipboard.writeText(currentTranscript);
+        showToast('Copied');
+      } catch {
+        showToast('Clipboard access denied');
+      }
+    }
+
+    // ── EVENTS ───────────────────────────────────────────────────
+    fetchBtn.addEventListener('click', handleFetch);
+    openClaudeBtn.addEventListener('click', handleOpenClaude);
+    copyRawBtn.addEventListener('click', handleCopyRaw);
+
+    urlInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleFetch();
+    });
+
+    // Clear error on new input
+    urlInput.addEventListener('input', () => {
+      if (errorMsg.classList.contains('visible')) {
+        errorMsg.classList.remove('visible');
+      }
+    });
+  </script>
+
+</body>
+</html>
