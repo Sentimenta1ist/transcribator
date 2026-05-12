@@ -13,7 +13,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
+from youtube_transcript_api._errors import NoTranscriptFound, RequestBlocked, TranscriptsDisabled
+from youtube_transcript_api.proxies import GenericProxyConfig
 
 from yt_transcript import (
     extract_video_id,
@@ -39,6 +40,8 @@ app.add_middleware(
 )
 
 _BASE = Path(__file__).parent
+_HTTP_PROXY = os.environ.get("HTTP_PROXY") or os.environ.get("HTTPS_PROXY")
+_PROXY_CONFIG = GenericProxyConfig(http=_HTTP_PROXY, https=_HTTP_PROXY) if _HTTP_PROXY else None
 _HTML = (_BASE / "index.html").read_text(encoding="utf-8")
 
 try:
@@ -71,12 +74,14 @@ async def transcript_endpoint(req: TranscriptRequest):
     try:
         title, snippets = await asyncio.gather(
             asyncio.to_thread(get_video_title, req.url),
-            asyncio.to_thread(fetch_transcript, video_id),
+            asyncio.to_thread(fetch_transcript, video_id, proxy_config=_PROXY_CONFIG),
         )
     except TranscriptsDisabled:
         raise HTTPException(status_code=422, detail="Transcripts are disabled for this video.")
     except NoTranscriptFound:
         raise HTTPException(status_code=422, detail="No transcript found for this video.")
+    except RequestBlocked:
+        raise HTTPException(status_code=503, detail="YouTube is blocking this server's IP. Set HTTP_PROXY env variable to a working proxy.")
     except Exception as e:
         logging.error("transcript fetch failed: %s\n%s", e, traceback.format_exc())
         raise HTTPException(status_code=502, detail=str(e))

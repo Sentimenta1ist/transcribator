@@ -73,8 +73,8 @@ def unique_path(directory: Path, stem: str, suffix: str = ".txt") -> Path:
     return candidate
 
 
-def fetch_transcript(video_id: str, lang: str = "en") -> list[dict]:
-    api = YouTubeTranscriptApi()
+def fetch_transcript(video_id: str, lang: str = "en", proxy_config=None) -> list[dict]:
+    api = YouTubeTranscriptApi(proxy_config)
     transcript_list = api.list(video_id)
 
     def preferred_order(langs: list[str]) -> list[str]:
