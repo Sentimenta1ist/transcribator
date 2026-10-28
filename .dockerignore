@@ -4,3 +4,6 @@ __pycache__
 transcripts/
 .git
 *.md
+tests/
+requirements-dev.txt
+.pytest_cache/
